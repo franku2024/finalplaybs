@@ -1,7 +1,7 @@
 import { Component } from '@angular/core';
 import { IonHeader, IonToolbar, IonTitle, IonContent } from '@ionic/angular/standalone';
 import { FormsModule } from '@angular/forms';
-import { Torneo } from '../models/torneo';
+import { Torneo, Equipo, Partido } from '../models/torneo';
 import { FirestoreService } from '../firestore.service';
 import { IonicModule } from '@ionic/angular'; 
 import { Observable } from 'rxjs';
@@ -23,7 +23,8 @@ export class Tab2Page {
     descripcion: '',
     fotoTorneoUrl: '',
     cantidadEP: 0,
-    equipos: [] 
+    equipos: [],
+    fixture: []
   };
 
   torneos$: Observable<Torneo[]>;
@@ -44,6 +45,8 @@ export class Tab2Page {
     modal.onDidDismiss().then((result) => {
       if (result && result.data) {
         console.log('Datos recibidos:', result.data);
+        this.generarFixture(result.data.equipos);
+        result.data.fixture = this.nuevoTorneo.fixture; // Asignar fixture generado
         this.firestoreService.crearTorneo(result.data).then(() => {
           console.log('Torneo creado con éxito');
         }).catch((error) => {
@@ -53,8 +56,6 @@ export class Tab2Page {
         console.warn('No se recibieron datos del modal');
       }
     });
-    
-    
 
     await modal.present();
   }
@@ -77,4 +78,25 @@ export class Tab2Page {
       this.nuevoTorneo.equipos.splice(index, 1);
     }
   }
+
+  // Método para generar el fixture de partidos en una estructura aplanada
+  generarFixture(equipos: Equipo[]) {
+    const fixture: Partido[] = [];
+    
+    for (let i = 0; i < equipos.length; i += 2) {
+      if (i + 1 < equipos.length) {
+        fixture.push({
+          equipo1: equipos[i].nombre,
+          equipo2: equipos[i + 1].nombre,
+          equipo1FotoUrl: equipos[i].fotoEquipoUrl, // Asignar foto del equipo 1
+          equipo2FotoUrl: equipos[i + 1].fotoEquipoUrl, // Asignar foto del equipo 2
+          resultado: ''
+        });
+      }
+    }
+    
+    this.nuevoTorneo.fixture = fixture;
+    console.log('Fixture generado:', fixture);
+  }
+  
 }
